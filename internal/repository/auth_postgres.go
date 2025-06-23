@@ -8,14 +8,6 @@ import (
 	"web-todo-service/internal/models"
 )
 
-const (
-	usersTable      = "users"
-	todoListsTable  = "todo_lists"
-	usersListsTable = "users_lists"
-	todoItemTable   = "todo_items"
-	listsItemsTable = "lists_items"
-)
-
 type AuthPostgres struct {
 	pool *pgxpool.Pool
 }
@@ -32,9 +24,17 @@ func (r *AuthPostgres) CreateUser(user models.User) (int, error) {
 		log.Printf("error wuth db query: %s", err)
 		return 0, err
 	}
-	return 0, nil
+	return id, nil
 }
 
 func (r *AuthPostgres) GetUser(username, password string) (models.User, error) {
-	return models.User{}, nil
+	var user models.User
+	query := fmt.Sprintf("select id from %s where username = $1 and password_hash = $2", usersTable)
+	row := r.pool.QueryRow(context.Background(), query, username, password)
+	if err := row.Scan(&user.Id); err != nil {
+		log.Printf("sql error: %s", err)
+		return models.User{}, err
+	}
+
+	return user, nil
 }

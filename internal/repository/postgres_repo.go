@@ -7,6 +7,14 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+const (
+	usersTable      = "users"
+	todoListsTable  = "todo_lists"
+	usersListsTable = "users_lists"
+	todoItemTable   = "todo_items"
+	listsItemsTable = "lists_items"
+)
+
 type PgPool struct {
 	pool *pgxpool.Pool
 }

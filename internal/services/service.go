@@ -7,7 +7,7 @@ import (
 
 type Authorization interface {
 	CreateUser(user models.User) (int, error)
-	GetUser(username, password string) (models.User, error)
+	GenerateToken(username, password string) (string, error)
 }
 
 type TodoList interface {
