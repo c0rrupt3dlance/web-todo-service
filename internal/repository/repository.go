@@ -11,6 +11,7 @@ type Authorization interface {
 }
 
 type TodoList interface {
+	Create(userId int, list models.TodoList) (int, error)
 }
 
 type ListItem interface {
@@ -23,5 +24,6 @@ type Repository struct {
 func NewRepository(pool *pgxpool.Pool) *Repository {
 	return &Repository{
 		Authorization: NewAuthPostgres(pool),
+		TodoList:      NewTodoListPostgres(pool),
 	}
 }
