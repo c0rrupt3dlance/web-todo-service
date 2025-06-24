@@ -7,7 +7,22 @@ import (
 	"web-todo-service/internal/models"
 )
 
-func (h *Handler) GetLists(c *gin.Context) {}
+func (h *Handler) GetAll(c *gin.Context) {
+	id, ok := c.Get(userCtx)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "no user id"})
+		return
+	}
+
+	lists, err := h.services.GetAll(id.(int))
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "can't get lists due to internal errors"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"lists": lists})
+}
 
 func (h *Handler) GetListById(c *gin.Context) {}
 

@@ -44,3 +44,30 @@ func (r *TodoListPostgres) Create(userId int, list models.TodoList) (int, error)
 	tx.Commit(context.Background())
 	return listId, nil
 }
+
+func (r *TodoListPostgres) GetAll(userId int) (*[]models.TodoList, error) {
+	var userLists []models.TodoList
+	query := fmt.Sprintf("select tl.id, tl.title, tl.description from %s tl inner join %s ul on tl.id = ul.list_id where ul.user_id = $1",
+		todoListsTable, usersListsTable)
+
+	rows, err := r.pool.Query(context.Background(), query, userId)
+
+	if err != nil {
+		log.Printf("sql error: %s", err)
+		return nil, err
+	}
+
+	for rows.Next() {
+		var list models.TodoList
+		if err = rows.Scan(&list.Id, &list.Title, &list.Description); err != nil {
+			log.Printf("sql error: %s", err)
+			return nil, err
+		}
+
+		userLists = append(userLists, list)
+
+	}
+	defer rows.Close()
+
+	return &userLists, nil
+}

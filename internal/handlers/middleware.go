@@ -37,6 +37,7 @@ func (h Handler) userIdentity(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, map[string]interface{}{
 			"message": "invalid token",
 		})
+		return
 	}
 
 	c.Set(userCtx, userId)
