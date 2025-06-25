@@ -89,8 +89,22 @@ func (h *Handler) UpdateList(c *gin.Context) {
 
 	if err != nil {
 		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "something went wrong during updating list"})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{"list": listId})
 }
 
-func (h *Handler) DeleteList(c *gin.Context) {}
+func (h *Handler) DeleteList(c *gin.Context) {
+	listId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "invalid id"})
+	}
+	err = h.services.TodoList.Delete(listId)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "something went wrong deleting list"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"list": listId})
+}

@@ -81,6 +81,7 @@ func (r *TodoListPostgres) GetById(userId int, listId int) (*models.TodoList, er
 
 	if err := row.Scan(&list.Id, &list.Title, &list.Description); err != nil {
 		log.Printf("sql error: %s", err)
+		return nil, err
 	}
 
 	return &list, nil
@@ -97,4 +98,13 @@ func (r *TodoListPostgres) Update(listId int, list models.TodoList) error {
 	}
 
 	return nil
+}
+
+func (r *TodoListPostgres) Delete(listId int) error {
+	query := fmt.Sprintf("delete from %s where id = $1", todoListsTable)
+	_, err := r.pool.Exec(context.Background(), query, listId)
+	if err != nil {
+		log.Printf("sql error: %s", err)
+	}
+	return err
 }
