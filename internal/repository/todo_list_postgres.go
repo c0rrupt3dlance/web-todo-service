@@ -71,3 +71,30 @@ func (r *TodoListPostgres) GetAll(userId int) (*[]models.TodoList, error) {
 
 	return &userLists, nil
 }
+
+func (r *TodoListPostgres) GetById(userId int, listId int) (*models.TodoList, error) {
+	var list models.TodoList
+
+	query := fmt.Sprintf("select * from %s where id = $1", todoListsTable)
+
+	row := r.pool.QueryRow(context.Background(), query, listId)
+
+	if err := row.Scan(&list.Id, &list.Title, &list.Description); err != nil {
+		log.Printf("sql error: %s", err)
+	}
+
+	return &list, nil
+}
+
+func (r *TodoListPostgres) Update(listId int, list models.TodoList) error {
+	query := fmt.Sprintf("update %s set title = $1, description = $2 where id = $3", todoListsTable)
+
+	_, err := r.pool.Exec(context.Background(), query, list.Title, list.Description, listId)
+
+	if err != nil {
+		log.Printf("sql error: %s", err)
+		return err
+	}
+
+	return nil
+}
