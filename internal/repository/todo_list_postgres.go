@@ -78,10 +78,10 @@ func (r *TodoListPostgres) GetById(userId int, listId int) (*models.TodoList, er
 	var list models.TodoList
 
 	query := fmt.Sprintf(`select tl.id, tl.title, tl.description from %s tl 
-		using %s ul where tl.id = ul.list_id and ul.list_id=$1 and ul.user_id=&2`,
-		todoListsTable)
+		inner join %s ul on tl.id = ul.list_id where ul.user_id=$1 and ul.list_id=$2`,
+		todoListsTable, usersListsTable)
 
-	row := r.pool.QueryRow(context.Background(), query, listId, userId)
+	row := r.pool.QueryRow(context.Background(), query, userId, listId)
 
 	if err := row.Scan(&list.Id, &list.Title, &list.Description); err != nil {
 		log.Printf("sql error: %s", err)
@@ -110,7 +110,7 @@ func (r *TodoListPostgres) Update(userId, listId int, inputList models.UpdateLis
 
 	setQuery := strings.Join(setValues, ", ")
 
-	query := fmt.Sprintf("update %s tl set %s from %s ul where tl.id=ul.list_id and ul.list_id = $%d and ul.user_id=%d",
+	query := fmt.Sprintf("update %s tl set %s from %s ul where tl.id=ul.list_id and ul.list_id = $%d and ul.user_id=$%d",
 		todoListsTable, setQuery, usersListsTable, argId, argId+1)
 
 	args = append(args, listId, userId)
@@ -125,11 +125,11 @@ func (r *TodoListPostgres) Update(userId, listId int, inputList models.UpdateLis
 	return nil
 }
 
-func (r *TodoListPostgres) Delete(listId int) error {
+func (r *TodoListPostgres) Delete(userId, listId int) error {
 	query := fmt.Sprintf(`delete from %s tl using %s ul where tl.id = ul.list_id 
                                   and ul.user_id=$1 and ul.list_id=$2`,
-		todoListsTable)
-	_, err := r.pool.Exec(context.Background(), query, listId)
+		todoListsTable, usersListsTable)
+	_, err := r.pool.Exec(context.Background(), query, userId, listId)
 	if err != nil {
 		log.Printf("sql error: %s", err)
 	}
