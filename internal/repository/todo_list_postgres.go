@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
+	"strings"
 	"web-todo-service/internal/models"
 )
 
@@ -47,7 +48,8 @@ func (r *TodoListPostgres) Create(userId int, list models.TodoList) (int, error)
 
 func (r *TodoListPostgres) GetAll(userId int) (*[]models.TodoList, error) {
 	var userLists []models.TodoList
-	query := fmt.Sprintf("select tl.id, tl.title, tl.description from %s tl inner join %s ul on tl.id = ul.list_id where ul.user_id = $1",
+	query := fmt.Sprintf(`select tl.id, tl.title, tl.description from %s tl
+        inner join %s ul on tl.id = ul.list_id where ul.user_id = $1`,
 		todoListsTable, usersListsTable)
 
 	rows, err := r.pool.Query(context.Background(), query, userId)
@@ -75,9 +77,11 @@ func (r *TodoListPostgres) GetAll(userId int) (*[]models.TodoList, error) {
 func (r *TodoListPostgres) GetById(userId int, listId int) (*models.TodoList, error) {
 	var list models.TodoList
 
-	query := fmt.Sprintf("select * from %s where id = $1", todoListsTable)
+	query := fmt.Sprintf(`select tl.id, tl.title, tl.description from %s tl 
+		using %s ul where tl.id = ul.list_id and ul.list_id=$1 and ul.user_id=&2`,
+		todoListsTable)
 
-	row := r.pool.QueryRow(context.Background(), query, listId)
+	row := r.pool.QueryRow(context.Background(), query, listId, userId)
 
 	if err := row.Scan(&list.Id, &list.Title, &list.Description); err != nil {
 		log.Printf("sql error: %s", err)
@@ -87,11 +91,32 @@ func (r *TodoListPostgres) GetById(userId int, listId int) (*models.TodoList, er
 	return &list, nil
 }
 
-func (r *TodoListPostgres) Update(listId int, list models.TodoList) error {
-	query := fmt.Sprintf("update %s set title = $1, description = $2 where id = $3", todoListsTable)
+func (r *TodoListPostgres) Update(userId, listId int, inputList models.UpdateListInput) error {
+	setValues := make([]string, 0)
+	args := make([]interface{}, 0)
+	argId := 1
 
-	_, err := r.pool.Exec(context.Background(), query, list.Title, list.Description, listId)
+	if inputList.Title != nil {
+		setValues = append(setValues, fmt.Sprintf("title=$%d", argId))
+		args = append(args, *inputList.Title)
+		argId++
+	}
 
+	if inputList.Description != nil {
+		setValues = append(setValues, fmt.Sprintf("description=$%d", argId))
+		args = append(args, *inputList.Description)
+		argId++
+	}
+
+	setQuery := strings.Join(setValues, ", ")
+
+	query := fmt.Sprintf("update %s tl set %s from %s ul where tl.id=ul.list_id and ul.list_id = $%d and ul.user_id=%d",
+		todoListsTable, setQuery, usersListsTable, argId, argId+1)
+
+	args = append(args, listId, userId)
+
+	_, err := r.pool.Exec(context.Background(), query, args...)
+	log.Println(query)
 	if err != nil {
 		log.Printf("sql error: %s", err)
 		return err
@@ -101,7 +126,9 @@ func (r *TodoListPostgres) Update(listId int, list models.TodoList) error {
 }
 
 func (r *TodoListPostgres) Delete(listId int) error {
-	query := fmt.Sprintf("delete from %s where id = $1", todoListsTable)
+	query := fmt.Sprintf(`delete from %s tl using %s ul where tl.id = ul.list_id 
+                                  and ul.user_id=$1 and ul.list_id=$2`,
+		todoListsTable)
 	_, err := r.pool.Exec(context.Background(), query, listId)
 	if err != nil {
 		log.Printf("sql error: %s", err)

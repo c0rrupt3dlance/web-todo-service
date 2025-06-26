@@ -27,10 +27,10 @@ func (s *TodoListService) GetById(userId int, listId int) (*models.TodoList, err
 	return s.repo.GetById(userId, listId)
 }
 
-func (s *TodoListService) Update(listId int, list models.TodoList) error {
-	return s.repo.Update(listId, list)
+func (s *TodoListService) Update(userId int, listId int, list models.TodoList) error {
+	return s.repo.Update(userId, listId, list)
 }
 
-func (s *TodoListService) Delete(listId int) error {
-	return s.repo.Delete(listId)
+func (s *TodoListService) Delete(userId, listId int) error {
+	return s.repo.Delete(userId, listId)
 }
