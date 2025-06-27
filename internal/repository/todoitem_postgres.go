@@ -50,7 +50,7 @@ func (r *TodoItemPostgres) GetAll(userId, listId int) ([]models.TodoItem, error)
 
 	rows, err := r.pool.Query(context.Background(), query, listId, userId)
 	if err != nil {
-		logrus.Printf("Error: %s", err)
+		logrus.Printf("error: %s", err)
 		return nil, err
 	}
 
@@ -65,4 +65,21 @@ func (r *TodoItemPostgres) GetAll(userId, listId int) ([]models.TodoItem, error)
 	}
 
 	return items, nil
+}
+
+func (r *TodoItemPostgres) GetById(userId, listId, itemId int) (models.TodoItem, error) {
+	query := fmt.Sprintf(`select ti.id, ti.title, ti.description, ti.done from %s ti 
+                                                inner join %s li on li.item_id = ti.id 
+                                                    inner join %s ul on ul.list_id = li.list_id 
+                                                        where li.item_id=$1 and li.list_id=$2 and ul.user_id=$3`,
+		todoItemTable, listsItemsTable, usersListsTable)
+
+	row := r.pool.QueryRow(context.Background(), query, itemId, listId, userId)
+	var item models.TodoItem
+	if err := row.Scan(&item.Id, &item.Title, &item.Description, &item.Done); err != nil {
+		logrus.Printf("error: %s", err)
+		return item, err
+	}
+
+	return item, nil
 }

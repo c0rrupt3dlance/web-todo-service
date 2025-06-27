@@ -31,7 +31,33 @@ func (h *Handler) GetAllItems(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"items": items})
 }
 
-func (h *Handler) GetItemById(c *gin.Context) {}
+func (h *Handler) GetItemById(c *gin.Context) {
+	userId, ok := c.Get(userCtx)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "no user id"})
+		return
+	}
+
+	listId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "invalid id"})
+		return
+	}
+
+	itemId, err := strconv.Atoi(c.Param("item_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "invalid id"})
+		return
+	}
+
+	item, err := h.services.TodoItem.GetById(userId.(int), listId, itemId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "something went wrong"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"item": item})
+}
 
 func (h *Handler) AddItem(c *gin.Context) {
 	userId, ok := c.Get(userCtx)

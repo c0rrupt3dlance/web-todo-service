@@ -21,6 +21,7 @@ type TodoList interface {
 type TodoItem interface {
 	Create(listId int, item models.TodoItem) (int, error)
 	GetAll(userId int, listId int) ([]models.TodoItem, error)
+	GetById(userId, listId, itemId int) (models.TodoItem, error)
 }
 type Repository struct {
 	Authorization
