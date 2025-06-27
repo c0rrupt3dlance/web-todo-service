@@ -74,7 +74,7 @@ func (r *TodoListPostgres) GetAll(userId int) (*[]models.TodoList, error) {
 	return &userLists, nil
 }
 
-func (r *TodoListPostgres) GetById(userId int, listId int) (*models.TodoList, error) {
+func (r *TodoListPostgres) GetById(userId int, listId int) (models.TodoList, error) {
 	var list models.TodoList
 
 	query := fmt.Sprintf(`select tl.id, tl.title, tl.description from %s tl 
@@ -83,12 +83,9 @@ func (r *TodoListPostgres) GetById(userId int, listId int) (*models.TodoList, er
 
 	row := r.pool.QueryRow(context.Background(), query, userId, listId)
 
-	if err := row.Scan(&list.Id, &list.Title, &list.Description); err != nil {
-		log.Printf("sql error: %s", err)
-		return nil, err
-	}
+	err := row.Scan(&list.Id, &list.Title, &list.Description)
 
-	return &list, nil
+	return list, err
 }
 
 func (r *TodoListPostgres) Update(userId, listId int, inputList models.UpdateListInput) error {

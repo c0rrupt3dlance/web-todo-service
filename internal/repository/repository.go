@@ -13,16 +13,19 @@ type Authorization interface {
 type TodoList interface {
 	Create(userId int, list models.TodoList) (int, error)
 	GetAll(userId int) (*[]models.TodoList, error)
-	GetById(userId int, listId int) (*models.TodoList, error)
+	GetById(userId int, listId int) (models.TodoList, error)
 	Update(userId int, listId int, list models.UpdateListInput) error
 	Delete(userId int, listId int) error
 }
 
-type ListItem interface {
+type TodoItem interface {
+	Create(userId int, listId int, item models.TodoItem) (int, error)
+	GetAll(userId int, listId int) (*[]models.TodoItem, error)
 }
 type Repository struct {
 	Authorization
 	TodoList
+	TodoItem
 }
 
 func NewRepository(pool *pgxpool.Pool) *Repository {
