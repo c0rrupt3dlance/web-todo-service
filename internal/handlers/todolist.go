@@ -15,7 +15,7 @@ func (h *Handler) GetAll(c *gin.Context) {
 		return
 	}
 
-	lists, err := h.services.GetAll(id.(int))
+	lists, err := h.services.TodoList.GetAll(id.(int))
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "can't get lists due to internal errors"})
@@ -38,7 +38,7 @@ func (h *Handler) GetListById(c *gin.Context) {
 		return
 	}
 
-	list, err := h.services.GetById(id.(int), listId)
+	list, err := h.services.TodoList.GetById(id.(int), listId)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "can't get list due to internal errors"})

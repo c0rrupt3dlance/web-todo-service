@@ -19,8 +19,8 @@ type TodoList interface {
 }
 
 type TodoItem interface {
-	Create(userId int, listId int, item models.TodoItem) (int, error)
-	GetAll(userId int, listId int) (*[]models.TodoItem, error)
+	Create(listId int, item models.TodoItem) (int, error)
+	GetAll(userId int, listId int) ([]models.TodoItem, error)
 }
 type Repository struct {
 	Authorization
@@ -32,5 +32,6 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 	return &Repository{
 		Authorization: NewAuthPostgres(pool),
 		TodoList:      NewTodoListPostgres(pool),
+		TodoItem:      NewTodoItemPostgres(pool),
 	}
 }

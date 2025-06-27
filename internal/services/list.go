@@ -23,7 +23,7 @@ func (s *TodoListService) GetAll(userId int) (*[]models.TodoList, error) {
 	return s.repo.GetAll(userId)
 }
 
-func (s *TodoListService) GetById(userId int, listId int) (*models.TodoList, error) {
+func (s *TodoListService) GetById(userId int, listId int) (models.TodoList, error) {
 	return s.repo.GetById(userId, listId)
 }
 

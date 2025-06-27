@@ -53,7 +53,7 @@ func (r *TodoListPostgres) GetAll(userId int) (*[]models.TodoList, error) {
 		todoListsTable, usersListsTable)
 
 	rows, err := r.pool.Query(context.Background(), query, userId)
-
+	defer rows.Close()
 	if err != nil {
 		log.Printf("sql error: %s", err)
 		return nil, err
@@ -69,7 +69,6 @@ func (r *TodoListPostgres) GetAll(userId int) (*[]models.TodoList, error) {
 		userLists = append(userLists, list)
 
 	}
-	defer rows.Close()
 
 	return &userLists, nil
 }

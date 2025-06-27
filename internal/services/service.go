@@ -14,21 +14,25 @@ type Authorization interface {
 type TodoList interface {
 	Create(userId int, list models.TodoList) (int, error)
 	GetAll(userId int) (*[]models.TodoList, error)
-	GetById(userId int, listId int) (*models.TodoList, error)
+	GetById(userId int, listId int) (models.TodoList, error)
 	Update(userId, listId int, inputList models.UpdateListInput) error
 	Delete(userId, listId int) error
 }
 
 type TodoItem interface {
+	Create(userId, listId int, item models.TodoItem) (int, error)
+	GetAll(userId, listId int) ([]models.TodoItem, error)
 }
 type Service struct {
 	Authorization
 	TodoList
+	TodoItem
 }
 
 func NewService(repo *repository.Repository) *Service {
 	return &Service{
 		Authorization: NewAuthService(repo.Authorization),
 		TodoList:      NewTodoListService(repo.TodoList),
+		TodoItem:      NewTodoItemService(repo.TodoItem, repo.TodoList),
 	}
 }
