@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sirupsen/logrus"
 	"log"
+	"strings"
 	"web-todo-service/internal/models"
 )
 
@@ -67,14 +68,14 @@ func (r *TodoItemPostgres) GetAll(userId, listId int) ([]models.TodoItem, error)
 	return items, nil
 }
 
-func (r *TodoItemPostgres) GetById(userId, listId, itemId int) (models.TodoItem, error) {
+func (r *TodoItemPostgres) GetById(userId, itemId int) (models.TodoItem, error) {
 	query := fmt.Sprintf(`select ti.id, ti.title, ti.description, ti.done from %s ti 
                                                 inner join %s li on li.item_id = ti.id 
                                                     inner join %s ul on ul.list_id = li.list_id 
-                                                        where li.item_id=$1 and li.list_id=$2 and ul.user_id=$3`,
+                                                        where ti.id=$1 and ul.user_id=$2`,
 		todoItemTable, listsItemsTable, usersListsTable)
 
-	row := r.pool.QueryRow(context.Background(), query, itemId, listId, userId)
+	row := r.pool.QueryRow(context.Background(), query, itemId, userId)
 	var item models.TodoItem
 	if err := row.Scan(&item.Id, &item.Title, &item.Description, &item.Done); err != nil {
 		logrus.Printf("error: %s", err)
@@ -82,4 +83,57 @@ func (r *TodoItemPostgres) GetById(userId, listId, itemId int) (models.TodoItem,
 	}
 
 	return item, nil
+}
+
+func (r *TodoItemPostgres) Update(userId, itemId int, inputItem models.UpdateItemInput) error {
+	setValues := make([]string, 0)
+	args := make([]interface{}, 0)
+	argsId := 1
+
+	if inputItem.Title != nil {
+		setValues = append(setValues, fmt.Sprintf("title=$%d", argsId))
+		args = append(args, *inputItem.Title)
+		argsId++
+	}
+
+	if inputItem.Description != nil {
+		setValues = append(setValues, fmt.Sprintf("title=$%d", argsId))
+		args = append(args, *inputItem.Description)
+		argsId++
+	}
+
+	if inputItem.Done != nil {
+		setValues = append(setValues, fmt.Sprintf("title=$%d", argsId))
+		args = append(args, *inputItem.Done)
+		argsId++
+	}
+
+	setQuery := strings.Join(setValues, ", ")
+
+	query := fmt.Sprintf(`update %s ti set %s from %s li, %s ul 
+                    where ti.id = li.item_id and li.list_id = ul.list_id and ul.user_id = $%d and li.item_id = $%d`,
+		todoItemTable, setQuery, listsItemsTable, usersListsTable, argsId, argsId+1)
+
+	args = append(args, userId, itemId)
+
+	_, err := r.pool.Exec(context.Background(), query, args...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *TodoItemPostgres) Delete(userId, itemId int) error {
+	query := fmt.Sprintf(`delete from %s ti using %s li, %s ul 
+       where ti.id = li.item_id and li.list_id = ul.list_id and ul.user_id=$1 and ti.id =  $2`,
+		todoItemTable, listsItemsTable, usersListsTable)
+
+	_, err := r.pool.Exec(context.Background(), query, userId, itemId)
+	if err != nil {
+		logrus.Printf("sql error: %s", err)
+		return err
+	}
+
+	return nil
 }

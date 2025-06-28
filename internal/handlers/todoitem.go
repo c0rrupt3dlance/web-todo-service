@@ -38,19 +38,13 @@ func (h *Handler) GetItemById(c *gin.Context) {
 		return
 	}
 
-	listId, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "invalid id"})
-		return
-	}
-
 	itemId, err := strconv.Atoi(c.Param("item_id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "invalid id"})
 		return
 	}
 
-	item, err := h.services.TodoItem.GetById(userId.(int), listId, itemId)
+	item, err := h.services.TodoItem.GetById(userId.(int), itemId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "something went wrong"})
 		return
@@ -91,6 +85,64 @@ func (h *Handler) AddItem(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"id": id})
 }
 
-func (h *Handler) UpdateItem(c *gin.Context) {}
+func (h *Handler) UpdateItem(c *gin.Context) {
+	userId, ok := c.Get(userCtx)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "no user id"})
+		return
+	}
 
-func (h *Handler) DeleteItem(c *gin.Context) {}
+	itemId, err := strconv.Atoi(c.Param("item_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "invalid id"})
+		return
+	}
+
+	var inputItem models.UpdateItemInput
+
+	if err = c.ShouldBindJSON(&inputItem); err != nil {
+		logrus.Printf("invalid item %s", err)
+		c.JSON(http.StatusBadRequest, gin.H{"message": "invalid item"})
+		return
+	}
+
+	err = h.services.TodoItem.Update(userId.(int), itemId, inputItem)
+	if err != nil {
+		logrus.Printf("error during update: %s", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "something went wrong",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "succesfully updated",
+	})
+}
+
+func (h *Handler) DeleteItem(c *gin.Context) {
+	userId, ok := c.Get(userCtx)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "no user id"})
+		return
+	}
+
+	itemId, err := strconv.Atoi(c.Param("item_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "invalid id"})
+		return
+	}
+
+	err = h.services.TodoItem.Delete(userId.(int), itemId)
+	if err != nil {
+		logrus.Printf("error during update: %s", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "something went wrong",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "succesfully deleted",
+	})
+}
